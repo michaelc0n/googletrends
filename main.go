@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 )
 
 //unmarshal xml
@@ -32,14 +33,14 @@ type News struct {
 	HeadlineLink string `xml:"news_item_url"`
 }
 
-func main() {
+func run() error {
 	var r RSS
 	data := readGoogleTrends()
 
 	//unmarshal data(rss xml)
 	err := xml.Unmarshal(data, &r)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("error unmarshalling: %w", err)
 	}
 
 	fmt.Println("\n Below are all the Google Search Trends For Today!")
@@ -50,9 +51,21 @@ func main() {
 		fmt.Println("#", rank)
 		fmt.Println("Search Term: ", r.Channel.ItemList[i].Title)
 		fmt.Println("Link to the Trend: ", r.Channel.ItemList[i].Link)
-		fmt.Println("Heading: ", r.Channel.ItemList[i].NewsItems[0].Headline)
-		fmt.Println("Link to article:", r.Channel.ItemList[i].NewsItems[0].HeadlineLink)
+		for n := range r.Channel.ItemList[i].NewsItems {
+			fmt.Println("Heading: ", r.Channel.ItemList[i].NewsItems[n].Headline)
+			fmt.Println("Link to article:", r.Channel.ItemList[i].NewsItems[n].HeadlineLink)
+		}
 		fmt.Println("------------------------------------------------------------------")
+	}
+	fmt.Println(err)
+	return err
+
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
 	}
 
 }
